@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>АХА — Мэдлэгийн сорил</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    background: #15101F;
+    overflow: hidden;
+    /* respect iPhone notch / safe areas */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  #root, #root * { font-family: 'Nunito', -apple-system, system-ui, sans-serif; }
+  button { font-family: 'Nunito', sans-serif; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  div { -webkit-overflow-scrolling: touch; }
+  /* prevent text selection / long-press menu on mobile */
+  * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  input, textarea { -webkit-user-select: text; user-select: text; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="react.min.js"></script>
+<script src="react-dom.min.js"></script>
+<script src="iap.js"></script>
+<script src="bundle.js"></script>
+</body>
+</html>
