@@ -1,0 +1,29 @@
+# АХА — Codemagic тохиргоо
+# Эхний workflow: Android debug APK (signing шаардлагагүй тул хамгийн хялбар шалгалт).
+# iOS болон Play Store release workflow-ийг Apple/Google account бэлэн болсны дараа нэмнэ.
+
+workflows:
+  android-debug:
+    name: АХА Android debug
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      node: 20
+      java: 17
+    scripts:
+      - name: Install npm dependencies
+        script: npm install
+      - name: Add Android platform (only if missing)
+        script: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+      - name: Sync web assets into Android project
+        script: npx cap sync android
+      - name: Build debug APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/**/*.apk
