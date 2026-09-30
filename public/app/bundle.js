@@ -1280,7 +1280,7 @@ function HomeScreen({
               fontWeight: 800,
               color: '#F1E9FF'
             },
-            children: "👋 Сайн уу, Найз аа!"
+            children: "👋 Сайн уу, " + (window.AHA_USER && window.AHA_USER.name || 'Найз') + "!"
           }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
             style: {
               marginTop: 8,
@@ -3654,17 +3654,9 @@ function MenuSheet({
     label: 'Профайл',
     t: 'profile'
   }, {
-    ic: 'archive',
-    label: 'Архив',
-    t: 'leaders'
-  }, {
     ic: 'pencil',
     label: 'Миний асуултууд',
     t: 'myq'
-  }, {
-    ic: 'heart',
-    label: 'Дуртай асуултууд',
-    t: 'favs'
   }];
   return /*#__PURE__*/_jsxDEV(Sheet, {
     onClose: onClose,
@@ -4245,17 +4237,9 @@ function TabBar({
     label: 'Нүүр',
     icon: 'home'
   }, {
-    id: 'leaders',
-    label: 'Архив',
-    icon: 'archive'
-  }, {
     id: 'myq',
     label: 'Миний асуултууд',
     icon: 'book'
-  }, {
-    id: 'favs',
-    label: 'Дуртай',
-    icon: 'heart'
   }, {
     id: 'profile',
     label: 'Профайл',
@@ -4600,126 +4584,276 @@ function LeaderScreen({
     }, void 0, false)]
   }, void 0, true);
 }
+const PROFILE_AVATARS = ['🧠', '🦊', '🐯', '🦉', '🐺', '🐼', '🦁', '🐸', '🐵', '🐙', '🦄', '🐲', '🚀', '🎯', '📚', '⭐'];
 function ProfileScreen({
   st
 }) {
-  const stats = [{
-    v: st.score.toLocaleString(),
-    l: 'Нийт оноо',
-    e: '⭐'
-  }, {
-    v: st.streak,
-    l: 'Дараалсан өдөр',
-    e: '🔥'
-  }, {
-    v: '85%',
-    l: 'Дундаж зөв',
-    e: '🎯'
-  }, {
-    v: st.activeTopics.length,
-    l: 'Идэвхтэй сэдэв',
-    e: '📚'
-  }];
-  return /*#__PURE__*/_jsxDEV(SubScreen, {
-    title: "Профайл",
-    children: [/*#__PURE__*/_jsxDEV("div", {
-      style: {
-        background: '#fff',
-        borderRadius: 22,
-        padding: '22px',
-        textAlign: 'center',
-        boxShadow: '0 4px 16px rgba(40,20,80,0.05)'
-      },
-      children: [/*#__PURE__*/_jsxDEV("div", {
-        style: {
-          width: 84,
-          height: 84,
-          borderRadius: '50%',
-          margin: '0 auto',
-          background: 'linear-gradient(135deg,#A855F7,#7C3AED)',
-          display: 'grid',
-          placeItems: 'center',
-          fontSize: 44,
-          boxShadow: '0 8px 20px rgba(124,58,237,0.35)'
+  const e = React.createElement;
+  const [me, setMe] = useA(() => window.AHA_USER || {});
+  const [editing, setEditing] = useA(false);
+  const [name, setName] = useA(me.name || '');
+  const [avatar, setAvatar] = useA(me.avatar || '🧠');
+  const [busy, setBusy] = useA(false);
+  const [err, setErr] = useA('');
+  const shown = me.avatar || '🧠';
+  const startEdit = () => {
+    setName(me.name || '');
+    setAvatar(me.avatar || '🧠');
+    setErr('');
+    setEditing(true);
+  };
+  const save = async () => {
+    setBusy(true);
+    setErr('');
+    try {
+      const r = await fetch('/api/profile', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        children: "🧠"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        style: {
-          fontSize: 21,
-          fontWeight: 900,
-          color: '#241B3D',
-          marginTop: 12
-        },
-        children: "Найз"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        style: {
-          marginTop: 6
-        },
-        children: st.isPlus ? /*#__PURE__*/_jsxDEV("span", {
-          style: {
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-            background: 'linear-gradient(135deg,#FCD34D,#F59E0B)',
-            color: '#5A3A00',
-            borderRadius: 9,
-            padding: '4px 11px',
-            fontSize: 13,
-            fontWeight: 900
-          },
-          children: [/*#__PURE__*/_jsxDEV(Icon, {
-            name: "crown",
-            size: 14,
-            color: "#7C3AED"
-          }, void 0, false), " PLUS гишүүн"]
-        }, void 0, true) : /*#__PURE__*/_jsxDEV("span", {
-          style: {
-            color: '#9690A6',
-            fontSize: 13,
-            fontWeight: 700
-          },
-          children: "Үнэгүй хэрэглэгч"
-        }, void 0, false)
-      }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 11,
-        marginTop: 14
-      },
-      children: stats.map((s, i) => /*#__PURE__*/_jsxDEV("div", {
-        style: {
-          background: '#fff',
-          borderRadius: 18,
-          padding: '16px',
-          boxShadow: '0 3px 10px rgba(40,20,80,0.04)'
-        },
-        children: [/*#__PURE__*/_jsxDEV("div", {
-          style: {
-            fontSize: 22
-          },
-          children: s.e
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          style: {
-            fontSize: 22,
-            fontWeight: 900,
-            color: '#241B3D',
-            marginTop: 6
-          },
-          children: s.v
-        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          style: {
-            fontSize: 12.5,
-            color: '#9690A6',
-            fontWeight: 700,
-            marginTop: 1
-          },
-          children: s.l
-        }, void 0, false)]
-      }, i, true))
-    }, void 0, false)]
-  }, void 0, true);
+        body: JSON.stringify({
+          name,
+          avatar
+        })
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Алдаа гарлаа');
+      const next = {
+        ...me,
+        name: j.user.name,
+        avatar: j.user.avatar
+      };
+      window.AHA_USER = next;
+      setMe(next);
+      setEditing(false);
+    } catch (x) {
+      setErr(x.message);
+    }
+    setBusy(false);
+  };
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'same-origin'
+      });
+    } catch (x) {}
+    location.reload();
+  };
+  const btn = (bg, color) => ({
+    flex: 1,
+    padding: '14px',
+    borderRadius: 14,
+    border: 'none',
+    background: bg,
+    color,
+    fontSize: 15,
+    fontWeight: 900,
+    cursor: 'pointer'
+  });
+  const badge = st.isPlus ? e('span', {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 5,
+      background: 'linear-gradient(135deg,#FCD34D,#F59E0B)',
+      color: '#5A3A00',
+      borderRadius: 9,
+      padding: '4px 11px',
+      fontSize: 13,
+      fontWeight: 900
+    }
+  }, e(Icon, {
+    name: 'crown',
+    size: 14,
+    color: '#7C3AED'
+  }), ' PLUS гишүүн') : e('span', {
+    style: {
+      color: '#9690A6',
+      fontSize: 13,
+      fontWeight: 700
+    }
+  }, 'Үнэгүй хэрэглэгч');
+  const card = editing ? e('div', {
+    style: {
+      background: '#fff',
+      borderRadius: 22,
+      padding: '20px',
+      boxShadow: '0 4px 16px rgba(40,20,80,0.05)'
+    }
+  }, e('div', {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#241B3D',
+      marginBottom: 12
+    }
+  }, 'Профайл засах'), e('div', {
+    style: {
+      fontSize: 12.5,
+      fontWeight: 800,
+      color: '#9690A6',
+      marginBottom: 6
+    }
+  }, 'Зураг сонгох'), e('div', {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(8,1fr)',
+      gap: 6
+    }
+  }, PROFILE_AVATARS.map(a => e('button', {
+    key: a,
+    onClick: () => setAvatar(a),
+    style: {
+      aspectRatio: '1',
+      border: avatar === a ? '2.5px solid #7C3AED' : '2px solid #ECE9F2',
+      background: avatar === a ? '#F1ECFE' : '#fff',
+      borderRadius: 12,
+      fontSize: 22,
+      cursor: 'pointer',
+      padding: 0
+    }
+  }, a))), e('div', {
+    style: {
+      fontSize: 12.5,
+      fontWeight: 800,
+      color: '#9690A6',
+      margin: '14px 0 6px'
+    }
+  }, 'Нэр'), e('input', {
+    value: name,
+    maxLength: 40,
+    onChange: ev => setName(ev.target.value),
+    placeholder: 'Нэрээ бичнэ үү',
+    style: {
+      width: '100%',
+      boxSizing: 'border-box',
+      border: '2px solid #E4DEF2',
+      borderRadius: 12,
+      padding: '13px 14px',
+      fontSize: 16,
+      fontWeight: 700,
+      outline: 'none',
+      color: '#241B3D',
+      fontFamily: 'inherit'
+    }
+  }), err && e('div', {
+    style: {
+      color: '#DC2626',
+      fontSize: 13,
+      fontWeight: 700,
+      marginTop: 8
+    }
+  }, err), e('div', {
+    style: {
+      display: 'flex',
+      gap: 10,
+      marginTop: 16
+    }
+  }, e('button', {
+    onClick: () => setEditing(false),
+    disabled: busy,
+    style: btn('#F1ECFE', '#7C3AED')
+  }, 'Болих'), e('button', {
+    onClick: save,
+    disabled: busy,
+    style: btn('linear-gradient(135deg,#8B5CF6,#7C3AED)', '#fff')
+  }, busy ? 'Хадгалж байна…' : 'Хадгалах'))) : e('div', {
+    style: {
+      background: '#fff',
+      borderRadius: 22,
+      padding: '22px',
+      textAlign: 'center',
+      boxShadow: '0 4px 16px rgba(40,20,80,0.05)'
+    }
+  }, e('div', {
+    style: {
+      width: 84,
+      height: 84,
+      borderRadius: '50%',
+      margin: '0 auto',
+      background: 'linear-gradient(135deg,#A855F7,#7C3AED)',
+      display: 'grid',
+      placeItems: 'center',
+      fontSize: 44,
+      boxShadow: '0 8px 20px rgba(124,58,237,0.35)'
+    }
+  }, shown), e('div', {
+    style: {
+      fontSize: 21,
+      fontWeight: 900,
+      color: '#241B3D',
+      marginTop: 12
+    }
+  }, me.name || 'Найз'), me.email && e('div', {
+    style: {
+      fontSize: 13,
+      color: '#9690A6',
+      fontWeight: 600,
+      marginTop: 2
+    }
+  }, me.email), e('div', {
+    style: {
+      marginTop: 8
+    }
+  }, badge), e('button', {
+    onClick: startEdit,
+    style: {
+      marginTop: 16,
+      padding: '11px 22px',
+      borderRadius: 14,
+      border: '2px solid #C9B8EC',
+      background: '#fff',
+      color: '#7C3AED',
+      fontSize: 15,
+      fontWeight: 900,
+      cursor: 'pointer'
+    }
+  }, '✎ Профайл засах'));
+  return e(SubScreen, {
+    title: 'Профайл'
+  }, card, e('div', {
+    style: {
+      background: '#fff',
+      borderRadius: 18,
+      padding: '16px',
+      marginTop: 14,
+      boxShadow: '0 3px 10px rgba(40,20,80,0.04)'
+    }
+  }, e('div', {
+    style: {
+      fontSize: 22
+    }
+  }, '📚'), e('div', {
+    style: {
+      fontSize: 22,
+      fontWeight: 900,
+      color: '#241B3D',
+      marginTop: 6
+    }
+  }, st.activeTopics.length), e('div', {
+    style: {
+      fontSize: 12.5,
+      color: '#9690A6',
+      fontWeight: 700,
+      marginTop: 1
+    }
+  }, 'Идэвхтэй сэдэв')), e('button', {
+    onClick: logout,
+    style: {
+      width: '100%',
+      marginTop: 14,
+      padding: '15px',
+      borderRadius: 16,
+      border: '2px solid #F3D3D3',
+      background: '#fff',
+      color: '#DC2626',
+      fontSize: 15,
+      fontWeight: 900,
+      cursor: 'pointer'
+    }
+  }, 'Системээс гарах'));
 }
 function EmptyState({
   emoji,
@@ -5647,9 +5781,9 @@ function App() {
         const ok = await window.AHA_IAP.init();
         if (ok) {
           const hasPlus = await window.AHA_IAP.checkStatus();
-          if (hasPlus) setSt(s => ({
+          setSt(s => ({
             ...s,
-            isPlus: true
+            isPlus: hasPlus ? true : s.isPlus
           }));
         }
       }
@@ -5691,7 +5825,7 @@ function App() {
     }),
     finish: res => {
       setResult(res);
-      setScreen('winner');
+      setScreen('result');
     }
   };
   const saveWinner = w => {
@@ -5853,7 +5987,7 @@ function App() {
     st: st,
     onPlus: () => openPlus('Дуртай асуулт хадгалахад PLUS эрх шаардлагатай')
   }, void 0, false);
-  const showTabs = ['home', 'leaders', 'myq', 'favs', 'profile'].includes(screen);
+  const showTabs = ['home', 'myq', 'profile'].includes(screen);
   return /*#__PURE__*/_jsxDEV(Stage, {
     children: [/*#__PURE__*/_jsxDEV(IOSDevice, {
       dark: screen === 'quiz' || screen === 'result' || screen === 'winner',

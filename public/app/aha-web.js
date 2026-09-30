@@ -169,6 +169,7 @@
     try {
       const me = await api("/api/me");
       window.AHA_DEV_TOGGLE = !!me.mock;
+      window.AHA_USER = me.user || null;
       window.AHA_PLUS_INFO = { until: me.plusUntil || null, admin: !!me.isAdmin };
       return !!me.isPlus;
     } catch (e) { return false; }

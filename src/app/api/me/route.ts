@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const u = await currentUser();
   return json({
-    user: u ? { email: u.email, name: u.name } : null,
+    user: u ? { email: u.email, name: u.name, avatar: u.avatar } : null,
     isPlus: isPlus(u) || isAdminUser(u),
     isAdmin: isAdminUser(u),
     plusUntil: u?.plus_until || null,

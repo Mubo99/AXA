@@ -10,6 +10,7 @@ export type User = {
   email: string;
   name: string;
   plus_until: number;
+  avatar: string | null;
 };
 
 export function hashPassword(password: string): string {
@@ -56,14 +57,20 @@ export async function currentUser(): Promise<User | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   const rows = await q(
-    `SELECT u.id, u.email, u.name, u.plus_until FROM sessions s
+    `SELECT u.id, u.email, u.name, u.plus_until, u.avatar FROM sessions s
      JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = $1 AND s.expires_at > $2`,
     [sha(token), Date.now()],
   );
   const r = rows[0];
   return r
-    ? { id: Number(r.id), email: r.email, name: r.name, plus_until: Number(r.plus_until) }
+    ? {
+        id: Number(r.id),
+        email: r.email,
+        name: r.name,
+        plus_until: Number(r.plus_until),
+        avatar: r.avatar ?? null,
+      }
     : null;
 }
 
