@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 
 // QPay энд GET дууддаг. Query-д итгэхгүй: төлбөрийг QPay-ээс дахин шалгаж баталгаажуулна.
 async function handle(req: Request) {
-  const p = getPayment(Number(new URL(req.url).searchParams.get("payment")));
+  const p = await getPayment(Number(new URL(req.url).searchParams.get("payment")));
   if (p) {
     try {
       await syncPayment(p, true);

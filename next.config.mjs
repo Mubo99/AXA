@@ -4,6 +4,7 @@ const nextConfig = {
   async rewrites() {
     return [{ source: "/", destination: "/app/index.html" }];
   },
+  serverExternalPackages: ["postgres", "@electric-sql/pglite"],
 };
 
 export default nextConfig;

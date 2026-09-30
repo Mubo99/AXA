@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { q } from "@/lib/db";
 import { createSession, hashPassword } from "@/lib/auth";
 import { body, fail, json } from "@/lib/http";
 
@@ -12,11 +12,12 @@ export async function POST(req: Request) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Имэйл буруу байна");
   if (!name) return fail("Нэрээ оруулна уу");
   if (password.length < 6) return fail("Нууц үг хамгийн багадаа 6 тэмдэгт");
-  if (db.prepare("SELECT 1 FROM users WHERE email = ?").get(email))
-    return fail("Энэ имэйл бүртгэлтэй байна", 409);
-  const r = db
-    .prepare("INSERT INTO users (email, name, pass_hash, created_at) VALUES (?, ?, ?, ?)")
-    .run(email, name, hashPassword(password), Date.now());
-  await createSession(Number(r.lastInsertRowid));
+  const rows = await q(
+    `INSERT INTO users (email, name, pass_hash, created_at) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (email) DO NOTHING RETURNING id`,
+    [email, name, hashPassword(password), Date.now()],
+  );
+  if (rows.length === 0) return fail("Энэ имэйл бүртгэлтэй байна", 409);
+  await createSession(Number(rows[0].id));
   return json({ ok: true });
 }

@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { tx } from "./db";
 
 const BASE = process.env.QPAY_BASE_URL || "https://merchant-sandbox.qpay.mn/v2";
 
@@ -63,7 +63,9 @@ export async function createInvoice(opts: {
     return {
       invoiceId: `manual_${opts.senderInvoiceNo}`,
       qrImage: null,
-      qrUrl: process.env.MANUAL_QR!,
+      qrUrl: /^(https?:\/)?\//.test(process.env.MANUAL_QR!)
+        ? process.env.MANUAL_QR!
+        : `/${process.env.MANUAL_QR}`,
       shortUrl: null,
       urls: [],
     };
@@ -101,33 +103,20 @@ export async function isInvoicePaid(invoiceId: string, amount: number): Promise<
   return paid >= amount;
 }
 
-/** pending → paid шилжилт нэг л удаа явагдаж, PLUS хугацааг нэг л удаа уртасгана. */
-export function markPaidAndGrant(paymentId: number): boolean {
+/** pending/claimed → paid шилжилт нэг л удаа явагдаж, PLUS хугацааг нэг л удаа уртасгана. */
+export async function markPaidAndGrant(paymentId: number): Promise<boolean> {
+  if (!Number.isInteger(paymentId)) return false;
   const now = Date.now();
-  db.exec("BEGIN IMMEDIATE");
-  try {
-    const upd = db
-      .prepare("UPDATE payments SET status='paid', paid_at=? WHERE id=? AND status IN ('pending','claimed')")
-      .run(now, paymentId);
-    if (Number(upd.changes) === 0) {
-      db.exec("COMMIT");
-      return false;
-    }
-    const p = db.prepare("SELECT user_id FROM payments WHERE id=?").get(paymentId) as {
-      user_id: number;
-    };
-    const u = db.prepare("SELECT plus_until FROM users WHERE id=?").get(p.user_id) as {
-      plus_until: number;
-    };
-    const from = Math.max(now, u.plus_until);
-    db.prepare("UPDATE users SET plus_until=? WHERE id=?").run(
-      from + PLUS_DAYS * 86400_000,
-      p.user_id,
+  return tx(async (q) => {
+    const upd = await q(
+      "UPDATE payments SET status='paid', paid_at=$2 WHERE id=$1 AND status IN ('pending','claimed') RETURNING user_id",
+      [paymentId, now],
     );
-    db.exec("COMMIT");
+    if (upd.length === 0) return false;
+    const userId = Number(upd[0].user_id);
+    const u = (await q("SELECT plus_until FROM users WHERE id=$1 FOR UPDATE", [userId]))[0];
+    const from = Math.max(now, Number(u.plus_until));
+    await q("UPDATE users SET plus_until=$2 WHERE id=$1", [userId, from + PLUS_DAYS * 86400_000]);
     return true;
-  } catch (e) {
-    db.exec("ROLLBACK");
-    throw e;
-  }
+  });
 }

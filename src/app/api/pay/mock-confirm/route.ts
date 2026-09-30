@@ -11,8 +11,8 @@ export async function POST(req: Request) {
   const u = await currentUser();
   if (!u) return fail("Нэвтрээгүй", 401);
   const { paymentId } = await body<{ paymentId?: number }>(req);
-  const p = getPayment(Number(paymentId));
+  const p = await getPayment(Number(paymentId));
   if (!p || p.user_id !== u.id) return fail("Олдсонгүй", 404);
-  markPaidAndGrant(p.id);
+  await markPaidAndGrant(p.id);
   return json({ ok: true });
 }

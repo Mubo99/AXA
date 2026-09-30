@@ -7,6 +7,6 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   if (!(await requireAdmin())) return fail("Админ эрх шаардлагатай", 403);
   const { paymentId } = await body<{ paymentId?: number }>(req);
-  const granted = markPaidAndGrant(Number(paymentId));
+  const granted = await markPaidAndGrant(Number(paymentId));
   return json({ ok: true, granted });
 }
