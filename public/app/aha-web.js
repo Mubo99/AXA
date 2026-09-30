@@ -169,6 +169,7 @@
     try {
       const me = await api("/api/me");
       window.AHA_DEV_TOGGLE = !!me.mock;
+      window.AHA_PLUS_INFO = { until: me.plusUntil || null, admin: !!me.isAdmin };
       return !!me.isPlus;
     } catch (e) { return false; }
   }
@@ -187,6 +188,7 @@
       if (me.isPlus) return { success: true };
       const inv = await post("/api/pay/create");
       const paid = await showPayment(inv);
+      if (paid) await checkStatus();
       return paid ? { success: true } : { success: false, cancelled: true };
     } catch (e) {
       return { success: false, error: e.message };
@@ -222,7 +224,7 @@
       return;
     }
     if (me && me.isAdmin) {
-      const a = el("a", { href: "/admin", text: "⚙ Админ", style: { position: "fixed", right: "12px", bottom: "92px", zIndex: 9999, background: "#7C3AED", color: "#fff", padding: "9px 14px", borderRadius: "20px", fontWeight: 900, fontSize: "13px", textDecoration: "none", fontFamily: "'Nunito',system-ui,sans-serif", boxShadow: "0 6px 16px rgba(0,0,0,.35)" } });
+      const a = el("a", { href: "/admin", text: "⚙ Админ", style: { position: "fixed", right: "12px", bottom: "92px", zIndex: 20, background: "#7C3AED", color: "#fff", padding: "9px 14px", borderRadius: "20px", fontWeight: 900, fontSize: "13px", textDecoration: "none", fontFamily: "'Nunito',system-ui,sans-serif", boxShadow: "0 6px 16px rgba(0,0,0,.35)" } });
       document.body.append(a);
     }
   })();

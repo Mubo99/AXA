@@ -2952,7 +2952,7 @@ function SheetHead({
   }, void 0, true);
 }
 const PLUS_FEATURES = ['Зар сурталчилгаагүй', 'Бүх сэдэв нээлттэй', 'Хязгааргүй тоглолт', 'Өөрийн асуулт нэмэх', 'Дуртай асуулт хадгалах', 'Дэлгэрэнгүй статистик'];
-function PaywallSheet({
+function PaywallSheetBase({
   onClose,
   onPurchase,
   onRestore,
@@ -3164,6 +3164,131 @@ function PaywallSheet({
       }, void 0, false)]
     }, void 0, true)]
   }, void 0, true);
+}
+function PlusActiveSheet({
+  onClose
+}) {
+  const info = window.AHA_PLUS_INFO || {};
+  const dateStr = info.admin ? 'Админ эрх — хугацаагүй' : info.until ? new Date(info.until).toLocaleDateString('mn-MN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }) + '-ны өдөр хүртэл' : '';
+  const daysLeft = info.until && !info.admin ? Math.max(0, Math.ceil((info.until - Date.now()) / 86400000)) : null;
+  return /*#__PURE__*/_jsxDEV(Sheet, {
+    onClose: onClose,
+    children: [/*#__PURE__*/_jsxDEV("div", {
+      style: {
+        textAlign: 'center',
+        paddingTop: 6
+      },
+      children: [/*#__PURE__*/_jsxDEV("div", {
+        style: {
+          width: 64,
+          height: 64,
+          borderRadius: 20,
+          margin: '0 auto',
+          background: 'linear-gradient(135deg,#8B5CF6,#7C3AED)',
+          display: 'grid',
+          placeItems: 'center',
+          boxShadow: '0 10px 24px rgba(124,58,237,0.4)'
+        },
+        children: /*#__PURE__*/_jsxDEV(Icon, {
+          name: "crown",
+          size: 34,
+          color: "#FCD34D"
+        }, void 0, false)
+      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+        style: {
+          fontSize: 24,
+          fontWeight: 900,
+          color: '#241B3D',
+          marginTop: 14
+        },
+        children: "PLUS эрх идэвхтэй ✓"
+      }, void 0, false), dateStr && /*#__PURE__*/_jsxDEV("div", {
+        style: {
+          fontSize: 14,
+          color: '#7C6BA0',
+          fontWeight: 700,
+          marginTop: 6
+        },
+        children: dateStr
+      }, void 0, false), daysLeft !== null && /*#__PURE__*/_jsxDEV("div", {
+        style: {
+          display: 'inline-block',
+          marginTop: 10,
+          background: '#E7F7EC',
+          color: '#16A34A',
+          fontWeight: 900,
+          fontSize: 13,
+          borderRadius: 10,
+          padding: '5px 12px'
+        },
+        children: daysLeft > 0 ? 'Үлдсэн ' + daysLeft + ' хоног' : 'Өнөөдөр дуусна'
+      }, void 0, false)]
+    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
+      style: {
+        marginTop: 20,
+        background: '#fff',
+        border: '2.5px solid #16A34A',
+        borderRadius: 20,
+        padding: '18px'
+      },
+      children: /*#__PURE__*/_jsxDEV("div", {
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 11
+        },
+        children: PLUS_FEATURES.map((f, i) => /*#__PURE__*/_jsxDEV("div", {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 11,
+            fontSize: 15,
+            color: '#3A3252',
+            fontWeight: 700
+          },
+          children: [/*#__PURE__*/_jsxDEV("span", {
+            style: {
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: '#E7F7EC',
+              display: 'grid',
+              placeItems: 'center',
+              flexShrink: 0
+            },
+            children: /*#__PURE__*/_jsxDEV(Icon, {
+              name: "check",
+              size: 15,
+              color: "#16A34A",
+              stroke: 3
+            }, void 0, false)
+          }, void 0, false), f]
+        }, i, true))
+      }, void 0, false)
+    }, void 0, false), /*#__PURE__*/_jsxDEV("button", {
+      onClick: onClose,
+      style: {
+        width: '100%',
+        marginTop: 18,
+        background: 'linear-gradient(135deg,#8B5CF6,#7C3AED)',
+        color: '#fff',
+        border: 'none',
+        borderRadius: 16,
+        padding: '16px',
+        cursor: 'pointer',
+        fontSize: 16,
+        fontWeight: 900
+      },
+      children: "Ойлголоо"
+    }, void 0, false)]
+  }, void 0, true);
+}
+function PaywallSheet(props) {
+  return props.isPlus ? /*#__PURE__*/_jsxDEV(PlusActiveSheet, props, void 0, false) : /*#__PURE__*/_jsxDEV(PaywallSheetBase, props, void 0, false);
 }
 function AddTopicSheet({
   st,
@@ -5847,6 +5972,7 @@ function App() {
         openPlus(r);
       }
     }, void 0, false), sheet && sheet.type === 'paywall' && /*#__PURE__*/_jsxDEV(PaywallSheet, {
+      isPlus: st.isPlus,
       onClose: closeSheet,
       onPurchase: purchase,
       onRestore: restorePurchases,
