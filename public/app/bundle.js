@@ -1343,7 +1343,7 @@ function HomeScreen({
           color: '#241B3D',
           whiteSpace: 'nowrap'
         },
-        children: "Миний сэдвүүд"
+        children: "Тоглох сэдвүүд"
       }, void 0, false), /*#__PURE__*/_jsxDEV("button", {
         onClick: () => setEditing(e => !e),
         style: {
