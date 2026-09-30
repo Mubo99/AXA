@@ -40,27 +40,28 @@
     x: { position: "absolute", top: "10px", right: "14px", background: "none", border: "none", fontSize: "26px", cursor: "pointer", color: "#9690A6", lineHeight: 1 },
   };
 
-  function modal(build) {
+  function modal(build, opts) {
     const overlay = el("div", { style: S.overlay });
+    if (opts && opts.required) overlay.style.background = "linear-gradient(160deg,#3B1F7A 0%,#15101F 70%)";
     const card = el("div", { style: S.card });
     overlay.append(card);
     document.body.append(overlay);
     let onClose = null;
     const close = () => { overlay.remove(); if (onClose) onClose(); };
     const closeBtn = el("button", { style: S.x, text: "×", "aria-label": "Хаах", onclick: close });
-    card.append(closeBtn);
+    if (!(opts && opts.required)) card.append(closeBtn);
     build(card, close, (fn) => { onClose = fn; });
     return close;
   }
 
   // ---------- нэвтрэх / бүртгүүлэх ----------
-  function showAuth() {
+  function showAuth(opts) {
     return new Promise((resolve) => {
       let done = false;
       const finish = (ok) => { if (!done) { done = true; resolve(ok); } };
       modal((card, close, setOnClose) => {
         setOnClose(() => finish(false));
-        let mode = "login";
+        let mode = opts && opts.required ? "register" : "login";
         const wrap = el("div");
         card.append(wrap);
         const render = () => {
@@ -84,16 +85,17 @@
           };
           submit.addEventListener("click", go);
           pass.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+          if (opts && opts.required) wrap.append(el("div", { style: { textAlign: "center", fontSize: "34px", fontWeight: 900, color: "#7C3AED", letterSpacing: "1px" }, text: "АХА" }), el("div", { style: { ...S.sub, marginBottom: "6px" }, text: "Мэдлэгийн сорил" }));
           wrap.append(
             el("div", { style: S.h, text: mode === "login" ? "Нэвтрэх" : "Бүртгүүлэх" }),
-            el("div", { style: S.sub, text: "PLUS эрхээ бүртгэлдээ хадгалахын тулд нэвтэрнэ үү." }),
+            el("div", { style: S.sub, text: opts && opts.required ? "АХА-г ашиглахын тулд эхлээд нэвтэрнэ үү." : "PLUS эрхээ бүртгэлдээ хадгалахын тулд нэвтэрнэ үү." }),
             ...(mode === "register" ? [name] : []),
             email, pass, err, submit,
             el("button", { style: S.link, text: mode === "login" ? "Бүртгэлгүй юу? Бүртгүүлэх" : "Бүртгэлтэй юу? Нэвтрэх", onclick: () => { mode = mode === "login" ? "register" : "login"; render(); } }),
           );
         };
         render();
-      });
+      }, opts);
     });
   }
 
@@ -208,4 +210,14 @@
       return { success: await checkStatus() };
     },
   };
+
+  // Нэвтрээгүй бол аппыг ашиглуулахгүй: эхлээд заавал нэвтрэх/бүртгүүлэх
+  (async function gate() {
+    let me = null;
+    try { me = await api("/api/me"); } catch (e) { return; }
+    if (me && !me.user) {
+      await showAuth({ required: true });
+      location.reload();
+    }
+  })();
 })();
