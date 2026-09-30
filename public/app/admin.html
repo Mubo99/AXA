@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="mn"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>АХА — Админ</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#15101F;color:#fff;margin:0;padding:20px}
+h1{font-size:20px} table{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
+th,td{padding:10px;border-bottom:1px solid #2c2440;text-align:left} .claimed{background:#2a2110}
+button{background:#7C3AED;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
+.tag{padding:2px 8px;border-radius:6px;font-size:12px;font-weight:700} .paid{background:#14532d}.pending{background:#3b3358}.claimed .tag{background:#b45309}
+#msg{margin-top:12px;color:#fca5a5} a{color:#c4b5fd}
+</style></head><body>
+<h1>Төлбөрийн баталгаажуулалт</h1>
+<div>QPay-ийн орлогын жагсаалттай тулгаад "Батлах" дарна. <a href="/">Нүүр хуудас (нэвтрэх)</a></div>
+<div id="msg"></div>
+<table><thead><tr><th>ID / Код</th><th>Хэрэглэгч</th><th>Дүн</th><th>Тэмдэглэл</th><th>Огноо</th><th>Төлөв</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+<script>
+const $=(t,p,txt)=>{const n=document.createElement(t);Object.assign(n,p||{});if(txt!=null)n.textContent=txt;return n};
+const label={pending:"Хүлээгдэж буй",claimed:"Төлсөн гэсэн",paid:"Батлагдсан"};
+async function load(){
+  const r=await fetch("/api/admin/payments");const j=await r.json();
+  const msg=document.getElementById("msg"),tb=document.getElementById("rows");
+  if(!r.ok){msg.textContent=(j.error||"Алдаа")+" — эхлээд админ имэйлээрээ нэвтэрнэ үү.";return}
+  msg.textContent="";tb.replaceChildren();
+  j.rows.forEach(p=>{
+    const tr=$("tr",{className:p.status});
+    tr.append($("td",0,"#"+p.id+" · AXA-"+p.id),$("td",0,p.name+" <"+p.email+">"),$("td",0,"₮"+p.amount.toLocaleString("en-US")),$("td",0,p.note||""),$("td",0,new Date(p.created_at).toLocaleString("mn-MN")));
+    const st=$("td");st.append($("span",{className:"tag "+p.status},label[p.status]||p.status));tr.append(st);
+    const act=$("td");
+    if(p.status!=="paid"){const b=$("button",0,"Батлах");b.onclick=async()=>{b.disabled=true;await fetch("/api/admin/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentId:p.id})});load()};act.append(b)}
+    tr.append(act);tb.append(tr);
+  });
+}
+load();setInterval(load,15000);
+</script></body></html>
