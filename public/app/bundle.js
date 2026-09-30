@@ -4596,6 +4596,19 @@ function ProfileScreen({
   const [avatar, setAvatar] = useA(me.avatar || '🧠');
   const [busy, setBusy] = useA(false);
   const [err, setErr] = useA('');
+  const [pw, setPw] = useA({
+    open: false,
+    cur: '',
+    next: '',
+    next2: '',
+    msg: '',
+    busy: false,
+    done: false
+  });
+  const upd = patch => setPw(o => ({
+    ...o,
+    ...patch
+  }));
   const shown = me.avatar || '🧠';
   const startEdit = () => {
     setName(me.name || '');
@@ -4652,6 +4665,139 @@ function ProfileScreen({
     fontWeight: 900,
     cursor: 'pointer'
   });
+  const savePw = async () => {
+    if (pw.next !== pw.next2) {
+      upd({
+        msg: 'Шинэ нууц үг хоорондоо таарахгүй байна'
+      });
+      return;
+    }
+    upd({
+      busy: true,
+      msg: ''
+    });
+    try {
+      const r = await fetch('/api/auth/password', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          current: pw.cur,
+          next: pw.next
+        })
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Алдаа гарлаа');
+      upd({
+        open: false,
+        cur: '',
+        next: '',
+        next2: '',
+        busy: false,
+        done: true
+      });
+      setTimeout(() => upd({
+        done: false
+      }), 4000);
+    } catch (x) {
+      upd({
+        busy: false,
+        msg: x.message
+      });
+    }
+  };
+  const pwInput = (key, placeholder) => e('input', {
+    type: 'password',
+    value: pw[key],
+    placeholder,
+    autoComplete: key === 'cur' ? 'current-password' : 'new-password',
+    onChange: ev => upd({
+      [key]: ev.target.value
+    }),
+    style: {
+      width: '100%',
+      boxSizing: 'border-box',
+      border: '2px solid #E4DEF2',
+      borderRadius: 12,
+      padding: '13px 14px',
+      fontSize: 16,
+      fontWeight: 700,
+      outline: 'none',
+      color: '#241B3D',
+      fontFamily: 'inherit',
+      marginTop: 10
+    }
+  });
+  const pwSection = e('div', {
+    style: {
+      background: '#fff',
+      borderRadius: 18,
+      padding: '16px',
+      marginTop: 14,
+      boxShadow: '0 3px 10px rgba(40,20,80,0.04)'
+    }
+  }, pw.open ? e('div', null, e('div', {
+    style: {
+      fontSize: 16,
+      fontWeight: 900,
+      color: '#241B3D'
+    }
+  }, 'Нууц үг солих'), pwInput('cur', 'Одоогийн нууц үг'), pwInput('next', 'Шинэ нууц үг (6+ тэмдэгт)'), pwInput('next2', 'Шинэ нууц үгээ давтах'), pw.msg && e('div', {
+    style: {
+      color: '#DC2626',
+      fontSize: 13,
+      fontWeight: 700,
+      marginTop: 10
+    }
+  }, pw.msg), e('div', {
+    style: {
+      display: 'flex',
+      gap: 10,
+      marginTop: 14
+    }
+  }, e('button', {
+    onClick: () => upd({
+      open: false,
+      cur: '',
+      next: '',
+      next2: '',
+      msg: ''
+    }),
+    disabled: pw.busy,
+    style: btn('#F1ECFE', '#7C3AED')
+  }, 'Болих'), e('button', {
+    onClick: savePw,
+    disabled: pw.busy,
+    style: btn('linear-gradient(135deg,#8B5CF6,#7C3AED)', '#fff')
+  }, pw.busy ? 'Хадгалж байна…' : 'Хадгалах'))) : e('div', null, pw.done && e('div', {
+    style: {
+      background: '#E7F7EC',
+      color: '#16A34A',
+      fontWeight: 800,
+      fontSize: 14,
+      borderRadius: 12,
+      padding: '10px 12px',
+      marginBottom: 10
+    }
+  }, '✓ Нууц үг амжилттай солигдлоо'), e('button', {
+    onClick: () => upd({
+      open: true,
+      done: false
+    }),
+    style: {
+      width: '100%',
+      padding: '13px',
+      borderRadius: 14,
+      border: '2px solid #C9B8EC',
+      background: '#fff',
+      color: '#7C3AED',
+      fontSize: 15,
+      fontWeight: 900,
+      cursor: 'pointer'
+    }
+  }, '🔑 Нууц үг солих')));
   const badge = st.isPlus ? e('span', {
     style: {
       display: 'inline-flex',
@@ -4841,7 +4987,7 @@ function ProfileScreen({
   }, '✎ Профайл засах'));
   return e(SubScreen, {
     title: 'Профайл'
-  }, card, e('button', {
+  }, card, pwSection, e('button', {
     onClick: logout,
     style: {
       width: '100%',
