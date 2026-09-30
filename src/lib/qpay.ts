@@ -2,7 +2,7 @@ import { tx } from "./db";
 
 const BASE = process.env.QPAY_BASE_URL || "https://merchant-sandbox.qpay.mn/v2";
 
-export const PLUS_PRICE = Number(process.env.PLUS_PRICE || 20000);
+export const PLUS_PRICE = Number(process.env.PLUS_PRICE || 8900);
 export const PLUS_DAYS = Number(process.env.PLUS_DAYS || 30);
 
 const hasApi = () =>
