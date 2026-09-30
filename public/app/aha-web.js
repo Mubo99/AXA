@@ -128,9 +128,10 @@
           card.append(el("button", { style: S.btn, text: "Төлсөн", onclick: async (e) => {
             e.target.disabled = true;
             try {
-              await post("/api/pay/claim", { paymentId: inv.paymentId, note: note.value });
+              const r = await post("/api/pay/claim", { paymentId: inv.paymentId, note: note.value });
+              if (r.trialUntil) { finish(true); close(); return; } // түр PLUS нээгдлээ
               note.remove(); e.target.remove();
-              status.textContent = "Хүсэлт илгээгдлээ. Төлбөрийг шалгаад PLUS-ийг идэвхжүүлнэ (удахгүй). Энэ цонхыг нээлттэй орхиж болно.";
+              status.textContent = "Хүсэлт илгээгдлээ. Төлбөрийг шалгаад PLUS-ийг идэвхжүүлнэ. Энэ цонхыг нээлттэй орхиж болно.";
             } catch (err) { status.textContent = err.message; e.target.disabled = false; }
           } }));
         }
@@ -218,6 +219,11 @@
     if (me && !me.user) {
       await showAuth({ required: true });
       location.reload();
+      return;
+    }
+    if (me && me.isAdmin) {
+      const a = el("a", { href: "/admin", text: "⚙ Админ", style: { position: "fixed", right: "12px", bottom: "92px", zIndex: 9999, background: "#7C3AED", color: "#fff", padding: "9px 14px", borderRadius: "20px", fontWeight: 900, fontSize: "13px", textDecoration: "none", fontFamily: "'Nunito',system-ui,sans-serif", boxShadow: "0 6px 16px rgba(0,0,0,.35)" } });
+      document.body.append(a);
     }
   })();
 })();

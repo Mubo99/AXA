@@ -1,34 +1,171 @@
 <!DOCTYPE html>
-<html lang="mn"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15101F">
 <title>АХА — Админ</title>
 <style>
-body{font-family:system-ui,sans-serif;background:#15101F;color:#fff;margin:0;padding:20px}
-h1{font-size:20px} table{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
-th,td{padding:10px;border-bottom:1px solid #2c2440;text-align:left} .claimed{background:#2a2110}
-button{background:#7C3AED;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
-.tag{padding:2px 8px;border-radius:6px;font-size:12px;font-weight:700} .paid{background:#14532d}.pending{background:#3b3358}.claimed .tag{background:#b45309}
-#msg{margin-top:12px;color:#fca5a5} a{color:#c4b5fd}
-</style></head><body>
-<h1>Төлбөрийн баталгаажуулалт</h1>
-<div>QPay-ийн орлогын жагсаалттай тулгаад "Батлах" дарна. <a href="/">Нүүр хуудас (нэвтрэх)</a></div>
-<div id="msg"></div>
-<table><thead><tr><th>ID / Код</th><th>Хэрэглэгч</th><th>Дүн</th><th>Тэмдэглэл</th><th>Огноо</th><th>Төлөв</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+  :root { --bg:#15101F; --card:#211934; --line:#33294d; --text:#F4F1FA; --muted:#A79CC2; --brand:#8B5CF6; --ok:#16A34A; --bad:#DC2626; --warn:#F59E0B; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,system-ui,'Segoe UI',sans-serif; padding:16px; padding-bottom:40px; }
+  .wrap { max-width:640px; margin:0 auto; }
+  h1 { font-size:22px; margin:6px 0 2px; }
+  .sub { color:var(--muted); font-size:14px; margin-bottom:14px; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+  .stat { background:var(--card); border-radius:14px; padding:12px 10px; text-align:center; }
+  .stat b { display:block; font-size:22px; }
+  .stat span { font-size:12px; color:var(--muted); }
+  .tabs { display:flex; gap:8px; margin-bottom:14px; }
+  .tab { flex:1; padding:12px; border-radius:12px; border:2px solid var(--line); background:none; color:var(--muted); font-size:15px; font-weight:800; cursor:pointer; }
+  .tab.on { background:var(--brand); border-color:var(--brand); color:#fff; }
+  .card { background:var(--card); border-radius:18px; padding:16px; margin-bottom:12px; border:2px solid transparent; }
+  .card.claimed { border-color:var(--warn); }
+  .row { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .who { font-size:17px; font-weight:800; word-break:break-word; }
+  .mail { font-size:13px; color:var(--muted); word-break:break-all; }
+  .amt { font-size:20px; font-weight:900; white-space:nowrap; }
+  .meta { font-size:13px; color:var(--muted); margin-top:8px; line-height:1.6; }
+  .code { display:inline-block; background:#2d2247; border-radius:8px; padding:2px 8px; font-weight:800; color:#C4B5FD; }
+  .tag { display:inline-block; padding:3px 10px; border-radius:8px; font-size:12px; font-weight:800; }
+  .tag.claimed { background:#5a3b06; color:#FCD34D; }
+  .tag.pending { background:#2d2247; color:var(--muted); }
+  .tag.paid { background:#0f3d20; color:#86EFAC; }
+  .tag.rejected { background:#4a1414; color:#FCA5A5; }
+  .btns { display:grid; grid-template-columns:2fr 1fr; gap:10px; margin-top:14px; }
+  button.act { padding:16px; border:none; border-radius:14px; font-size:17px; font-weight:900; cursor:pointer; color:#fff; }
+  button.ok { background:var(--ok); }
+  button.no { background:#3a2a4f; color:#FCA5A5; }
+  button:disabled { opacity:.5; }
+  .empty { text-align:center; color:var(--muted); padding:40px 10px; }
+  .box { background:var(--card); border-radius:18px; padding:20px; }
+  input { width:100%; padding:14px; border-radius:12px; border:2px solid var(--line); background:#15101F; color:var(--text); font-size:16px; margin-top:10px; }
+  .msg { color:#FCA5A5; font-size:14px; min-height:18px; margin-top:8px; }
+  .primary { width:100%; margin-top:12px; padding:15px; border:none; border-radius:14px; background:var(--brand); color:#fff; font-size:17px; font-weight:900; cursor:pointer; }
+  .link { background:none; border:none; color:#C4B5FD; font-size:14px; cursor:pointer; margin-top:14px; text-decoration:underline; }
+  .top { display:flex; justify-content:space-between; align-items:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
 <script>
-const $=(t,p,txt)=>{const n=document.createElement(t);Object.assign(n,p||{});if(txt!=null)n.textContent=txt;return n};
-const label={pending:"Хүлээгдэж буй",claimed:"Төлсөн гэсэн",paid:"Батлагдсан"};
-async function load(){
-  const r=await fetch("/api/admin/payments");const j=await r.json();
-  const msg=document.getElementById("msg"),tb=document.getElementById("rows");
-  if(!r.ok){msg.textContent=(j.error||"Алдаа")+" — эхлээд админ имэйлээрээ нэвтэрнэ үү.";return}
-  msg.textContent="";tb.replaceChildren();
-  j.rows.forEach(p=>{
-    const tr=$("tr",{className:p.status});
-    tr.append($("td",0,"#"+p.id+" · AXA-"+p.id),$("td",0,p.name+" <"+p.email+">"),$("td",0,"₮"+p.amount.toLocaleString("en-US")),$("td",0,p.note||""),$("td",0,new Date(p.created_at).toLocaleString("mn-MN")));
-    const st=$("td");st.append($("span",{className:"tag "+p.status},label[p.status]||p.status));tr.append(st);
-    const act=$("td");
-    if(p.status!=="paid"){const b=$("button",0,"Батлах");b.onclick=async()=>{b.disabled=true;await fetch("/api/admin/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentId:p.id})});load()};act.append(b)}
-    tr.append(act);tb.append(tr);
+const app = document.getElementById("app");
+const api = async (url, opts) => {
+  const r = await fetch(url, { credentials: "same-origin", headers: { "Content-Type": "application/json" }, ...opts });
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  return { ok: r.ok, status: r.status, data: j };
+};
+const post = (u, b) => api(u, { method: "POST", body: JSON.stringify(b || {}) });
+const h = (tag, props, ...kids) => {
+  const n = document.createElement(tag);
+  Object.entries(props || {}).forEach(([k, v]) => {
+    if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if (k === "class") n.className = v;
+    else n.setAttribute(k, v);
   });
+  kids.flat().forEach((c) => n.append(c && c.nodeType ? c : document.createTextNode(c ?? "")));
+  return n;
+};
+const money = (n) => "₮" + Number(n).toLocaleString("en-US");
+const ago = (t) => {
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (m < 1) return "дөнгөж сая";
+  if (m < 60) return m + " мин өмнө";
+  const hr = Math.round(m / 60);
+  if (hr < 24) return hr + " цагийн өмнө";
+  return Math.round(hr / 24) + " өдрийн өмнө";
+};
+const LABEL = { pending: "Хүлээгдэж буй", claimed: "Төлсөн гэсэн", paid: "Батлагдсан", rejected: "Татгалзсан" };
+
+let tab = "claimed", timer = null;
+
+function loginView(note) {
+  clearInterval(timer);
+  const email = h("input", { type: "email", placeholder: "Имэйл", autocomplete: "email" });
+  const pass = h("input", { type: "password", placeholder: "Нууц үг", autocomplete: "current-password" });
+  const msg = h("div", { class: "msg" }, note || "");
+  const go = async () => {
+    msg.textContent = "";
+    const r = await post("/api/auth/login", { email: email.value, password: pass.value });
+    if (!r.ok) { msg.textContent = r.data.error || "Алдаа"; return; }
+    start();
+  };
+  pass.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  app.replaceChildren(
+    h("h1", {}, "АХА Админ"),
+    h("div", { class: "sub" }, "Админ имэйлээрээ нэвтэрнэ үү"),
+    h("div", { class: "box" }, email, pass, msg, h("button", { class: "primary", onclick: go }, "Нэвтрэх")),
+  );
 }
-load();setInterval(load,15000);
-</script></body></html>
+
+function notAdminView(me) {
+  clearInterval(timer);
+  app.replaceChildren(
+    h("h1", {}, "Админ эрх байхгүй"),
+    h("div", { class: "sub" }, me.user.email + " нь админ биш байна. Vercel дээрх ADMIN_EMAILS-д энэ имэйл байгаа эсэх, Redeploy хийсэн эсэхийг шалгана уу."),
+    h("button", { class: "primary", onclick: async () => { await post("/api/auth/logout"); start(); } }, "Гарах, өөр имэйлээр нэвтрэх"),
+  );
+}
+
+async function act(path, id, btns) {
+  btns.forEach((b) => (b.disabled = true));
+  await post(path, { paymentId: id });
+  load();
+}
+
+function card(p) {
+  const approve = h("button", { class: "act ok" }, "✓ Батлах");
+  const reject = h("button", { class: "act no" }, "Татгалзах");
+  approve.onclick = () => act("/api/admin/approve", p.id, [approve, reject]);
+  reject.onclick = () => { if (confirm("Татгалзах уу? Түр эрх байвал хасагдана.")) act("/api/admin/reject", p.id, [approve, reject]); };
+  const open = p.status === "pending" || p.status === "claimed";
+  const trial = p.trial_until && p.status !== "paid" && p.status !== "rejected"
+    ? h("div", {}, "Түр PLUS: " + (p.trial_until > Date.now() ? "идэвхтэй, " + new Date(p.trial_until).toLocaleString("mn-MN") + "-хүртэл" : "дууссан"))
+    : null;
+  return h("div", { class: "card " + p.status },
+    h("div", { class: "row" },
+      h("div", {}, h("div", { class: "who" }, p.name), h("div", { class: "mail" }, p.email)),
+      h("div", { class: "amt" }, money(p.amount))),
+    h("div", { class: "meta" },
+      h("span", { class: "tag " + p.status }, LABEL[p.status] || p.status), " ",
+      h("span", { class: "code" }, "AXA-" + p.id), " · " + ago(p.created_at),
+      p.note ? h("div", {}, "Тэмдэглэл: " + p.note) : null,
+      trial),
+    open && p.status === "claimed" ? h("div", { class: "btns" }, approve, reject) : null,
+    open && p.status === "pending" ? h("div", { class: "meta" }, "Хэрэглэгч “Төлсөн” дараагүй байна.") : null);
+}
+
+async function load() {
+  const r = await api("/api/admin/payments");
+  if (!r.ok) return start();
+  const rows = r.data.rows;
+  const count = (s) => rows.filter((x) => x.status === s).length;
+  const claimed = count("claimed");
+  document.title = (claimed ? "(" + claimed + ") " : "") + "АХА — Админ";
+  const shown = tab === "claimed" ? rows.filter((x) => x.status === "claimed") : rows;
+  const tabBtn = (id, label) => h("button", { class: "tab " + (tab === id ? "on" : ""), onclick: () => { tab = id; load(); } }, label);
+  app.replaceChildren(
+    h("div", { class: "top" }, h("h1", {}, "АХА Админ"),
+      h("button", { class: "link", onclick: async () => { await post("/api/auth/logout"); start(); } }, "Гарах")),
+    h("div", { class: "sub" }, "QPay-н Орлогын түүхтэй тулгаад батална. 10 сек тутам шинэчлэгдэнэ."),
+    h("div", { class: "stats" },
+      h("div", { class: "stat" }, h("b", {}, String(claimed)), h("span", {}, "Батлах хүлээж буй")),
+      h("div", { class: "stat" }, h("b", {}, String(count("paid"))), h("span", {}, "Батлагдсан")),
+      h("div", { class: "stat" }, h("b", {}, money(rows.filter((x) => x.status === "paid").reduce((s, x) => s + x.amount, 0))), h("span", {}, "Нийт орлого"))),
+    h("div", { class: "tabs" }, tabBtn("claimed", "Батлах (" + claimed + ")"), tabBtn("all", "Бүгд")),
+    ...(shown.length ? shown.map(card) : [h("div", { class: "empty" }, tab === "claimed" ? "Батлах хүсэлт алга 🎉" : "Төлбөр алга")]));
+}
+
+async function start() {
+  clearInterval(timer);
+  const me = await api("/api/me");
+  if (!me.ok) { app.replaceChildren(h("div", { class: "empty" }, "Сервертэй холбогдож чадсангүй")); return; }
+  if (!me.data.user) return loginView();
+  if (!me.data.isAdmin) return notAdminView(me.data);
+  await load();
+  timer = setInterval(load, 10000);
+}
+start();
+</script>
+</body>
+</html>

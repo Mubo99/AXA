@@ -103,20 +103,67 @@ export async function isInvoicePaid(invoiceId: string, amount: number): Promise<
   return paid >= amount;
 }
 
-/** pending/claimed → paid шилжилт нэг л удаа явагдаж, PLUS хугацааг нэг л удаа уртасгана. */
+/**
+ * pending/claimed → paid шилжилт нэг л удаа явагдаж, PLUS хугацааг нэг л удаа уртасгана.
+ * Хэрэв энэ төлбөрөөр түр (trial) эрх өгсөн бол түүнийг орлож 30 хоногийг өмнөх эрхээс тоолно.
+ */
 export async function markPaidAndGrant(paymentId: number): Promise<boolean> {
   if (!Number.isInteger(paymentId)) return false;
   const now = Date.now();
   return tx(async (q) => {
     const upd = await q(
-      "UPDATE payments SET status='paid', paid_at=$2 WHERE id=$1 AND status IN ('pending','claimed') RETURNING user_id",
+      "UPDATE payments SET status='paid', paid_at=$2 WHERE id=$1 AND status IN ('pending','claimed') RETURNING user_id, trial_until, prev_plus",
       [paymentId, now],
     );
     if (upd.length === 0) return false;
     const userId = Number(upd[0].user_id);
     const u = (await q("SELECT plus_until FROM users WHERE id=$1 FOR UPDATE", [userId]))[0];
-    const from = Math.max(now, Number(u.plus_until));
+    const current = Number(u.plus_until);
+    const trialUntil = upd[0].trial_until == null ? null : Number(upd[0].trial_until);
+    const base = trialUntil !== null && current === trialUntil ? Number(upd[0].prev_plus ?? 0) : current;
+    const from = Math.max(now, base);
     await q("UPDATE users SET plus_until=$2 WHERE id=$1", [userId, from + PLUS_DAYS * 86400_000]);
+    return true;
+  });
+}
+
+export const TRIAL_HOURS = Number(process.env.TRIAL_HOURS || 24);
+
+/** "Төлсөн" дарсан хэрэглэгчид нэг удаа түр PLUS өгнө. Өгсөн бол дуусах хугацааг буцаана. */
+export async function claimPayment(paymentId: number, note: string): Promise<number | null> {
+  return tx(async (q) => {
+    const upd = await q(
+      "UPDATE payments SET status='claimed', note=$2 WHERE id=$1 AND status='pending' RETURNING user_id",
+      [paymentId, note],
+    );
+    if (upd.length === 0) return null;
+    const userId = Number(upd[0].user_id);
+    const u = (await q("SELECT plus_until, trial_used FROM users WHERE id=$1 FOR UPDATE", [userId]))[0];
+    const now = Date.now();
+    const prev = Number(u.plus_until);
+    if (u.trial_used || prev > now) return null; // аль хэдийн эрхтэй эсвэл түр эрх ашигласан
+    const until = now + TRIAL_HOURS * 3600_000;
+    await q("UPDATE users SET plus_until=$2, trial_used=TRUE WHERE id=$1", [userId, until]);
+    await q("UPDATE payments SET trial_until=$2, prev_plus=$3 WHERE id=$1", [paymentId, until, prev]);
+    return until;
+  });
+}
+
+/** Татгалзах: түр эрх өгсөн байсан бол буцаан хасна. */
+export async function rejectPayment(paymentId: number): Promise<boolean> {
+  return tx(async (q) => {
+    const upd = await q(
+      "UPDATE payments SET status='rejected' WHERE id=$1 AND status IN ('pending','claimed') RETURNING user_id, trial_until, prev_plus",
+      [paymentId],
+    );
+    if (upd.length === 0) return false;
+    if (upd[0].trial_until != null) {
+      await q("UPDATE users SET plus_until=$3 WHERE id=$1 AND plus_until=$2", [
+        Number(upd[0].user_id),
+        Number(upd[0].trial_until),
+        Number(upd[0].prev_plus ?? 0),
+      ]);
+    }
     return true;
   });
 }

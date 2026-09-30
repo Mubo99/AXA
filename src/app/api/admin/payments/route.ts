@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   if (!(await requireAdmin())) return fail("Админ эрх шаардлагатай", 403);
   const rows = await q(
-    `SELECT p.id, p.amount, p.status, p.note, p.created_at, p.paid_at, u.email, u.name
+    `SELECT p.id, p.amount, p.status, p.note, p.created_at, p.paid_at, p.trial_until, u.email, u.name
      FROM payments p JOIN users u ON u.id = p.user_id
-     WHERE p.status IN ('pending','claimed','paid')
+     WHERE p.status IN ('pending','claimed','paid','rejected')
      ORDER BY (p.status='claimed') DESC, p.created_at DESC LIMIT 200`,
   );
   return json({
@@ -20,6 +20,7 @@ export async function GET() {
       amount: Number(r.amount),
       created_at: Number(r.created_at),
       paid_at: r.paid_at == null ? null : Number(r.paid_at),
+      trial_until: r.trial_until == null ? null : Number(r.trial_until),
     })),
   });
 }
