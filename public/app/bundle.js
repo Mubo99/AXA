@@ -1222,6 +1222,7 @@ function HomeScreen({
           position: 'relative',
           borderRadius: 26,
           padding: '22px 20px 56px',
+          minHeight: 210,
           overflow: 'hidden',
           background: 'radial-gradient(120% 100% at 80% 10%, #7C3AED 0%, #5B21B6 55%, #3F1480 100%)',
           boxShadow: '0 16px 36px rgba(76,29,149,0.4)'
@@ -1289,71 +1290,7 @@ function HomeScreen({
               lineHeight: 1.12
             },
             children: "Өнөөдөр мэдлэгээ сорьё! 🧠"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-            style: {
-              marginTop: 18,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16
-            },
-            children: [/*#__PURE__*/_jsxDEV("div", {
-              children: [/*#__PURE__*/_jsxDEV("div", {
-                style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: 21,
-                  fontWeight: 900,
-                  color: '#fff'
-                },
-                children: [/*#__PURE__*/_jsxDEV("span", {
-                  style: {
-                    fontSize: 18
-                  },
-                  children: "⭐"
-                }, void 0, false), st.score.toLocaleString()]
-              }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-                style: {
-                  fontSize: 12,
-                  color: '#C9B8EC',
-                  fontWeight: 700,
-                  marginTop: 1
-                },
-                children: "Нийт оноо"
-              }, void 0, false)]
-            }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-              style: {
-                width: 1,
-                height: 34,
-                background: 'rgba(255,255,255,0.2)'
-              }
-            }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-              children: [/*#__PURE__*/_jsxDEV("div", {
-                style: {
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: 21,
-                  fontWeight: 900,
-                  color: '#fff'
-                },
-                children: [/*#__PURE__*/_jsxDEV("span", {
-                  style: {
-                    fontSize: 18
-                  },
-                  children: "🔥"
-                }, void 0, false), st.streak]
-              }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-                style: {
-                  fontSize: 12,
-                  color: '#C9B8EC',
-                  fontWeight: 700,
-                  marginTop: 1
-                },
-                children: "Өдөр дараалсан"
-              }, void 0, false)]
-            }, void 0, true)]
-          }, void 0, true)]
+          }, void 0, false)]
         }, void 0, true)]
       }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
         onClick: on.start,
