@@ -2745,43 +2745,6 @@ function QuizScreen({
         },
         children: "···"
       }, void 0, false)]
-    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
-      style: {
-        margin: '20px 16px 0',
-        background: '#fff',
-        borderRadius: 20,
-        padding: '18px 10px',
-        display: 'flex',
-        boxShadow: '0 4px 16px rgba(40,20,80,0.05)'
-      },
-      children: [/*#__PURE__*/_jsxDEV(Stat, {
-        icon: "clockdown",
-        color: "#7C3AED",
-        tint: "#EDE4FC",
-        value: fmt(elapsed),
-        label: "Нийт хугацаа"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        style: {
-          width: 1,
-          background: '#EEEBF2'
-        }
-      }, void 0, false), /*#__PURE__*/_jsxDEV(Stat, {
-        icon: "⭐",
-        tint: "#FCF1D6",
-        value: score.toLocaleString(),
-        label: "Одоогийн оноо"
-      }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-        style: {
-          width: 1,
-          background: '#EEEBF2'
-        }
-      }, void 0, false), /*#__PURE__*/_jsxDEV(Stat, {
-        icon: "trend",
-        color: "#16A34A",
-        tint: "#E2F5E9",
-        value: accuracy + '%',
-        label: "Зөв хариулт"
-      }, void 0, false)]
     }, void 0, true), /*#__PURE__*/_jsxDEV("button", {
       onClick: () => on.finish({
         score,
