@@ -4579,7 +4579,18 @@ function ProfileScreen({
   st
 }) {
   const e = React.createElement;
-  const [me, setMe] = useA(() => window.AHA_USER || {});
+  const [, force] = useA(0);
+  const me = window.AHA_USER || {};
+  useAE(() => {
+    if (!window.AHA_USER) fetch('/api/me', {
+      credentials: 'same-origin'
+    }).then(r => r.json()).then(j => {
+      if (j.user) {
+        window.AHA_USER = j.user;
+        force(n => n + 1);
+      }
+    }).catch(() => {});
+  }, []);
   const [editing, setEditing] = useA(false);
   const [name, setName] = useA(me.name || '');
   const [avatar, setAvatar] = useA(me.avatar || '🧠');
@@ -4609,13 +4620,12 @@ function ProfileScreen({
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'Алдаа гарлаа');
-      const next = {
-        ...me,
+      window.AHA_USER = {
+        ...(window.AHA_USER || {}),
         name: j.user.name,
         avatar: j.user.avatar
       };
-      window.AHA_USER = next;
-      setMe(next);
+      force(n => n + 1);
       setEditing(false);
     } catch (x) {
       setErr(x.message);
@@ -4665,6 +4675,26 @@ function ProfileScreen({
       fontWeight: 700
     }
   }, 'Үнэгүй хэрэглэгч');
+  const loginRow = e('div', {
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 6,
+      background: '#F5F2FB',
+      borderRadius: 10,
+      padding: '7px 12px',
+      fontSize: 13,
+      fontWeight: 700,
+      color: '#6B5F86',
+      maxWidth: '100%',
+      wordBreak: 'break-all',
+      textAlign: 'left'
+    }
+  }, '🔒 Нэвтрэх нэр: ', e('b', {
+    style: {
+      color: '#241B3D'
+    }
+  }, me.email || '—'));
   const card = editing ? e('div', {
     style: {
       background: '#fff',
@@ -4680,6 +4710,17 @@ function ProfileScreen({
       marginBottom: 12
     }
   }, 'Профайл засах'), e('div', {
+    style: {
+      marginBottom: 14
+    }
+  }, loginRow, e('div', {
+    style: {
+      fontSize: 11.5,
+      color: '#9690A6',
+      fontWeight: 600,
+      marginTop: 5
+    }
+  }, 'Нэвтрэх нэрийг өөрчилж болохгүй')), e('div', {
     style: {
       fontSize: 12.5,
       fontWeight: 800,
@@ -4711,7 +4752,7 @@ function ProfileScreen({
       color: '#9690A6',
       margin: '14px 0 6px'
     }
-  }, 'Нэр'), e('input', {
+  }, 'Харагдах нэр'), e('input', {
     value: name,
     maxLength: 40,
     onChange: ev => setName(ev.target.value),
@@ -4776,16 +4817,13 @@ function ProfileScreen({
       color: '#241B3D',
       marginTop: 12
     }
-  }, me.name || 'Найз'), me.email && e('div', {
+  }, me.name || 'Найз'), e('div', {
     style: {
-      fontSize: 13,
-      color: '#9690A6',
-      fontWeight: 600,
-      marginTop: 2
+      marginTop: 10
     }
-  }, me.email), e('div', {
+  }, loginRow), e('div', {
     style: {
-      marginTop: 8
+      marginTop: 10
     }
   }, badge), e('button', {
     onClick: startEdit,
@@ -4803,33 +4841,7 @@ function ProfileScreen({
   }, '✎ Профайл засах'));
   return e(SubScreen, {
     title: 'Профайл'
-  }, card, e('div', {
-    style: {
-      background: '#fff',
-      borderRadius: 18,
-      padding: '16px',
-      marginTop: 14,
-      boxShadow: '0 3px 10px rgba(40,20,80,0.04)'
-    }
-  }, e('div', {
-    style: {
-      fontSize: 22
-    }
-  }, '📚'), e('div', {
-    style: {
-      fontSize: 22,
-      fontWeight: 900,
-      color: '#241B3D',
-      marginTop: 6
-    }
-  }, st.activeTopics.length), e('div', {
-    style: {
-      fontSize: 12.5,
-      color: '#9690A6',
-      fontWeight: 700,
-      marginTop: 1
-    }
-  }, 'Идэвхтэй сэдэв')), e('button', {
+  }, card, e('button', {
     onClick: logout,
     style: {
       width: '100%',
