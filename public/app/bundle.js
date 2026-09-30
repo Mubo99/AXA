@@ -932,8 +932,7 @@ function ActiveTopicCard({
 }) {
   return /*#__PURE__*/_jsxDEV("div", {
     style: {
-      flex: '0 0 auto',
-      width: 156,
+      width: '100%',
       background: '#fff',
       borderRadius: 20,
       padding: 14,
@@ -1359,44 +1358,38 @@ function HomeScreen({
       }, void 0, false)]
     }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
       style: {
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
         gap: 12,
-        padding: '0 16px',
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch'
+        padding: '0 16px'
       },
-      children: active.map(t => /*#__PURE__*/_jsxDEV(ActiveTopicCard, {
+      children: [...active.map(t => /*#__PURE__*/_jsxDEV(ActiveTopicCard, {
         t: t,
         editing: editing,
         onRemove: on.removeTopic
-      }, t.id, false))
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-      style: {
-        padding: '12px 16px 0'
-      },
-      children: /*#__PURE__*/_jsxDEV("button", {
+      }, t.id, false)), /*#__PURE__*/_jsxDEV("button", {
         onClick: on.addTopic,
         style: {
-          width: '100%',
+          minHeight: 132,
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          gap: 14,
+          justifyContent: 'center',
+          gap: 8,
           cursor: 'pointer',
           background: '#F6F2FE',
           border: '2px dashed #C9B8EC',
-          borderRadius: 18,
-          padding: '14px 16px',
-          textAlign: 'left'
+          borderRadius: 20,
+          padding: 14
         },
         children: [/*#__PURE__*/_jsxDEV("div", {
           style: {
-            width: 44,
-            height: 44,
-            borderRadius: 13,
+            width: 46,
+            height: 46,
+            borderRadius: 14,
             background: '#EDE4FC',
             display: 'grid',
-            placeItems: 'center',
-            flexShrink: 0
+            placeItems: 'center'
           },
           children: /*#__PURE__*/_jsxDEV(Icon, {
             name: "plus",
@@ -1405,30 +1398,27 @@ function HomeScreen({
             stroke: 2.4
           }, void 0, false)
         }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-          children: [/*#__PURE__*/_jsxDEV("div", {
-            style: {
-              fontSize: 16,
-              fontWeight: 800,
-              color: '#7C3AED'
-            },
-            children: "Сэдэв нэмэх"
-          }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
-            style: {
-              marginTop: 3,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 7,
-              fontSize: 12.5,
-              color: '#9690A6',
-              fontWeight: 700
-            },
-            children: ["(дээд тал нь ", st.isPlus ? 12 : 5, ") ", !st.isPlus && /*#__PURE__*/_jsxDEV(PlusBadge, {
-              small: true
-            }, void 0, false)]
-          }, void 0, true)]
+          style: {
+            fontSize: 15,
+            fontWeight: 800,
+            color: '#7C3AED'
+          },
+          children: "Сэдэв нэмэх"
+        }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+          style: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            color: '#9690A6',
+            fontWeight: 700
+          },
+          children: ["дээд тал нь ", st.isPlus ? 12 : 5, !st.isPlus && /*#__PURE__*/_jsxDEV(PlusBadge, {
+            small: true
+          }, void 0, false)]
         }, void 0, true)]
-      }, void 0, true)
-    }, void 0, false), /*#__PURE__*/_jsxDEV("div", {
+      }, "add", true)]
+    }, void 0, true), /*#__PURE__*/_jsxDEV("div", {
       style: {
         fontSize: 20,
         fontWeight: 900,
