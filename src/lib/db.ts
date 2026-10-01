@@ -35,6 +35,27 @@ const SCHEMA = `
     created_at BIGINT NOT NULL,
     paid_at BIGINT
   );
+  CREATE TABLE IF NOT EXISTS questions (
+    id SERIAL PRIMARY KEY,
+    owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    topic TEXT NOT NULL,
+    q TEXT NOT NULL,
+    a TEXT NOT NULL,
+    c INTEGER NOT NULL,
+    e TEXT,
+    diff INTEGER,
+    created_at BIGINT NOT NULL,
+    updated_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS questions_owner_idx ON questions(owner_id);
+  CREATE TABLE IF NOT EXISTS user_topics (
+    id TEXT NOT NULL,
+    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL,
+    PRIMARY KEY (owner_id, id)
+  );
+  CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
   ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_used BOOLEAN NOT NULL DEFAULT FALSE;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
   ALTER TABLE payments ADD COLUMN IF NOT EXISTS trial_until BIGINT;

@@ -5903,24 +5903,38 @@ function App() {
       localStorage.setItem('aha_winners_v1', JSON.stringify(winners));
     } catch (e) {}
   }, [winners]);
-  const [customQuestions, setCustomQuestions] = useA(() => {
-    try {
-      const s = localStorage.getItem('aha_questions_v1');
-      if (s) return JSON.parse(s);
-    } catch (e) {}
-    return [];
-  });
-  // load any stored custom questions into the live bank once
+  const [customQuestions, setCustomQuestions] = useA([]);
+  const [, qTick] = useA(0);
+  // Сервер дээрх албан ёсны асуулт + ЗӨВХӨН энэ хэрэглэгчийн өөрийн асуулт, сэдвийг ачаалах
   useAE(() => {
-    customQuestions.forEach(q => {
-      if (!AHA.QUESTIONS.some(x => x.id === q.id)) AHA.QUESTIONS.push(q);
-    });
+    (async () => {
+      if (!window.AHA_Q) return;
+      const j = await window.AHA_Q.load();
+      if (!j) return;
+      AHA.QUESTIONS.length = 0;
+      j.official.concat(j.mine).forEach(q => AHA.QUESTIONS.push(q));
+      const glyphs = ['bulb', 'flask', 'globe', 'palette', 'planet', 'map', 'music', 'film'];
+      j.topics.forEach(t => {
+        if (!AHA.TOPICS.some(x => x.id === t.id)) AHA.TOPICS.push({
+          id: t.id,
+          name: t.name,
+          short: t.name.slice(0, 6),
+          count: 0,
+          color: t.color,
+          tint: t.color + '1A',
+          glyph: glyphs[(t.id.length + t.id.charCodeAt(t.id.length - 1)) % glyphs.length],
+          free: true,
+          active: true,
+          custom: true
+        });
+      });
+      AHA.TOPICS.forEach(t => {
+        t.count = AHA.QUESTIONS.filter(q => q.topic === t.id).length;
+      });
+      setCustomQuestions(j.mine);
+      qTick(n => n + 1);
+    })();
   }, []);
-  useAE(() => {
-    try {
-      localStorage.setItem('aha_questions_v1', JSON.stringify(customQuestions));
-    } catch (e) {}
-  }, [customQuestions]);
 
   // RevenueCat IAP-ийг эхлүүлэх ба PLUS статусыг сэргээх
   useAE(() => {
@@ -6038,12 +6052,20 @@ function App() {
     setQuizKey(k => k + 1);
     setScreen('quiz');
   };
-  const saveQuestion = data => {
-    const qObj = {
-      ...data,
-      custom: true,
-      id: 'q_' + Date.now()
-    };
+  const saveQuestion = async data => {
+    if (window.__savingQ) return;
+    window.__savingQ = true;
+    let r;
+    try {
+      r = await window.AHA_Q.add(data);
+    } finally {
+      window.__savingQ = false;
+    }
+    if (r.error) {
+      flash('⚠️ ' + r.error);
+      return;
+    }
+    const qObj = r.question;
     AHA.QUESTIONS.push(qObj);
     const t = AHA.TOPICS.find(x => x.id === data.topic);
     if (t) t.count += 1;
@@ -6051,7 +6073,12 @@ function App() {
     closeSheet();
     flash('Асуулт архивт нэмэгдлээ ✓');
   };
-  const deleteQuestion = id => {
+  const deleteQuestion = async id => {
+    const res = await window.AHA_Q.remove(id);
+    if (res.error) {
+      flash('⚠️ ' + res.error);
+      return;
+    }
     const idx = AHA.QUESTIONS.findIndex(x => x.id === id);
     if (idx > -1) {
       const q = AHA.QUESTIONS[idx];
@@ -6074,7 +6101,7 @@ function App() {
     color
   }) => {
     const glyphs = ['bulb', 'flask', 'globe', 'palette', 'planet', 'map', 'music', 'film'];
-    const id = 'custom_' + Date.now();
+    const id = 'custom_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
     const tint = color + '1A';
     const topic = {
       id,
@@ -6089,6 +6116,11 @@ function App() {
       custom: true
     };
     AHA.TOPICS.push(topic);
+    if (window.AHA_Q) window.AHA_Q.addTopic({
+      id,
+      name,
+      color
+    });
     setSt(s => ({
       ...s,
       activeTopics: s.activeTopics.includes(id) ? s.activeTopics : [...s.activeTopics, id]

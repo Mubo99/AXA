@@ -44,6 +44,25 @@
   .primary { width:100%; margin-top:12px; padding:15px; border:none; border-radius:14px; background:var(--brand); color:#fff; font-size:17px; font-weight:900; cursor:pointer; }
   .link { background:none; border:none; color:#C4B5FD; font-size:14px; cursor:pointer; margin-top:14px; text-decoration:underline; }
   .top { display:flex; justify-content:space-between; align-items:center; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .chip { background:var(--card); border:2px solid var(--line); color:var(--text); border-radius:20px; padding:6px 12px; font-size:13px; font-weight:700; cursor:pointer; }
+  .chip.on { border-color:var(--brand); background:#2d2247; }
+  .chip b { color:#C4B5FD; }
+  .ctl { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+  .ctl .full { grid-column:1 / -1; }
+  select, textarea { width:100%; padding:12px; border-radius:12px; border:2px solid var(--line); background:#15101F; color:var(--text); font-size:15px; font-family:inherit; }
+  textarea { min-height:80px; resize:vertical; }
+  .opt { padding:7px 10px; border-radius:8px; margin-top:6px; background:#2d2247; font-size:14px; }
+  .opt.ok { background:#0f3d20; color:#86EFAC; font-weight:800; }
+  .mini { padding:10px 14px; border:none; border-radius:10px; font-size:14px; font-weight:800; cursor:pointer; color:#fff; background:#3a2a4f; }
+  .mini.main { background:var(--brand); }
+  .mini.del { color:#FCA5A5; }
+  .optrow { display:flex; align-items:center; gap:8px; margin-top:8px; }
+  .optrow input[type=radio] { width:22px; height:22px; flex:none; margin:0; padding:0; }
+  .optrow input[type=text] { margin-top:0; }
+  .panel { background:var(--card); border-radius:18px; padding:16px; margin-bottom:14px; border:2px solid var(--brand); }
+  .lbl { font-size:12.5px; color:var(--muted); font-weight:800; margin:12px 0 4px; }
+  .pager { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px; color:var(--muted); font-size:14px; }
 </style>
 </head>
 <body>
@@ -59,6 +78,7 @@ const post = (u, b) => api(u, { method: "POST", body: JSON.stringify(b || {}) })
 const h = (tag, props, ...kids) => {
   const n = document.createElement(tag);
   Object.entries(props || {}).forEach(([k, v]) => {
+    if (v == null) return;
     if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
     else if (k === "class") n.className = v;
     else n.setAttribute(k, v);
@@ -147,6 +167,7 @@ async function load() {
   app.replaceChildren(
     h("div", { class: "top" }, h("h1", {}, "АХА Админ"),
       h("button", { class: "link", onclick: async () => { await post("/api/auth/logout"); start(); } }, "Гарах")),
+    navBar(),
     h("div", { class: "sub" }, "QPay-н Орлогын түүхтэй тулгаад батална. 10 сек тутам шинэчлэгдэнэ."),
     h("div", { class: "stats" },
       h("div", { class: "stat" }, h("b", {}, String(claimed)), h("span", {}, "Батлах хүлээж буй")),
@@ -162,9 +183,161 @@ async function start() {
   if (!me.ok) { app.replaceChildren(h("div", { class: "empty" }, "Сервертэй холбогдож чадсангүй")); return; }
   if (!me.data.user) return loginView();
   if (!me.data.isAdmin) return notAdminView(me.data);
-  await load();
-  timer = setInterval(load, 10000);
+  await render();
+  timer = setInterval(() => { if (section === "pay") load(); }, 10000);
 }
+let section = "pay";
+const qs = { owner: "official", topic: "", search: "", page: 1, data: null, editing: null, importOpen: false, msg: "" };
+const DIFF = { 1: "Хялбар", 2: "Дунд", 3: "Хэцүү" };
+const navBar = () => h("div", { class: "tabs" },
+  h("button", { class: "tab " + (section === "pay" ? "on" : ""), onclick: () => { section = "pay"; render(); } }, "💳 Төлбөр"),
+  h("button", { class: "tab " + (section === "q" ? "on" : ""), onclick: () => { section = "q"; render(); } }, "❓ Асуултууд"));
+const render = () => (section === "q" ? loadQ() : load());
+
+async function loadQ() {
+  const p = new URLSearchParams({ owner: qs.owner, topic: qs.topic, search: qs.search, page: String(qs.page) });
+  const r = await api("/api/admin/questions?" + p);
+  if (!r.ok) return start();
+  qs.data = r.data;
+  drawQ();
+}
+
+const topicName = (id) => (qs.data.stats.topics.find((t) => t.id === id) || { name: id }).name;
+
+function editor(item) {
+  const topics = qs.data.stats.topics;
+  const topicSel = h("select", {}, topics.map((t) => h("option", { value: t.id }, t.name)));
+  if (item) {
+    if (!topics.some((t) => t.id === item.topic)) topicSel.append(h("option", { value: item.topic }, item.topic));
+    topicSel.value = item.topic;
+    if (item.custom) topicSel.disabled = true;
+  } else if (qs.topic) topicSel.value = qs.topic;
+  const q = h("textarea", { placeholder: "Асуулт" }); q.value = item ? item.q : "";
+  const n = Math.min(6, Math.max(4, item ? item.a.length : 4));
+  const radios = [], inputs = [];
+  const rows = [];
+  for (let i = 0; i < n; i++) {
+    const radio = h("input", { type: "radio", name: "correct" });
+    const inp = h("input", { type: "text", placeholder: "Хариулт " + "АБВГДЕ"[i] });
+    inp.value = item && item.a[i] != null ? item.a[i] : "";
+    if (item && item.c === i) radio.checked = true;
+    radios.push(radio); inputs.push(inp);
+    rows.push(h("div", { class: "optrow" }, radio, inp));
+  }
+  const e = h("textarea", { placeholder: "Тайлбар (заавал биш)" }); e.value = item && item.e ? item.e : "";
+  const diff = h("select", {}, [1, 2, 3].map((d) => h("option", { value: String(d) }, DIFF[d])));
+  diff.value = String(item ? item.diff : 2);
+  const msg = h("div", { class: "msg" });
+  const save = h("button", { class: "mini main" }, item ? "Хадгалах" : "Нэмэх");
+  save.onclick = async () => {
+    msg.textContent = "";
+    const a = [];
+    let c = -1;
+    inputs.forEach((inp, i) => { const v = inp.value.trim(); if (!v) return; if (radios[i].checked) c = a.length; a.push(v); });
+    if (a.length < 2) { msg.textContent = "Дор хаяж 2 хариулт оруулна уу"; return; }
+    if (c < 0) { msg.textContent = "Зөв хариултыг сонгоно уу (радио товч)"; return; }
+    save.disabled = true;
+    const body = { topic: topicSel.value, q: q.value, a, c, e: e.value, diff: Number(diff.value) };
+    const r = item ? await api("/api/admin/questions/" + item.id, { method: "PATCH", body: JSON.stringify(body) }) : await post("/api/admin/questions", body);
+    save.disabled = false;
+    if (!r.ok) { msg.textContent = r.data.error || "Алдаа гарлаа"; return; }
+    qs.editing = null; qs.msg = item ? "✓ Хадгалагдлаа" : "✓ Асуулт нэмэгдлээ";
+    loadQ();
+  };
+  return h("div", { class: "panel" },
+    h("div", { class: "who" }, item ? "Асуулт засах (" + item.id + ")" : "Шинэ албан ёсны асуулт"),
+    h("div", { class: "lbl" }, "Сэдэв"), topicSel,
+    h("div", { class: "lbl" }, "Асуулт"), q,
+    h("div", { class: "lbl" }, "Хариултууд (зөв хариултыг радиогоор тэмдэглэ)"), rows,
+    h("div", { class: "lbl" }, "Тайлбар"), e,
+    h("div", { class: "lbl" }, "Хүндрэл"), diff,
+    msg,
+    h("div", { class: "btns", style: "grid-template-columns:1fr 1fr" }, save, h("button", { class: "mini", onclick: () => { qs.editing = null; drawQ(); } }, "Болих")));
+}
+
+function importPanel() {
+  const ta = h("textarea", { placeholder: '[{"topic":"science","q":"Асуулт?","a":["А","Б","В","Г"],"c":1,"e":"тайлбар","diff":2}]', style: "min-height:140px;font-family:monospace;font-size:13px" });
+  const msg = h("div", { class: "msg" });
+  const go = h("button", { class: "mini main" }, "Оруулах");
+  go.onclick = async () => {
+    msg.style.color = "#FCA5A5"; msg.textContent = "";
+    let items;
+    try { items = JSON.parse(ta.value); if (!Array.isArray(items)) throw new Error(); } catch (err) { msg.textContent = "JSON жагсаалт ([ ... ]) буруу байна"; return; }
+    go.disabled = true;
+    const r = await post("/api/admin/questions", { items });
+    go.disabled = false;
+    if (!r.ok) { msg.textContent = r.data.error || "Алдаа"; return; }
+    msg.style.color = "#86EFAC";
+    msg.textContent = "✓ " + r.data.created + " асуулт нэмэгдлээ" + (r.data.errors.length ? ". Алдаатай: " + r.data.errors.slice(0, 5).join("; ") : "");
+    if (r.data.created) { ta.value = ""; loadQ().then(() => {}); }
+  };
+  return h("div", { class: "panel" },
+    h("div", { class: "who" }, "Олноор оруулах (JSON)"),
+    h("div", { class: "mail" }, "Нэг удаад 200 хүртэл. topic: " + qs.data.stats.topics.map((t) => t.id).join(", ") + ". c = зөв хариултын дугаар (0-ээс эхэлнэ). diff 1–3."),
+    ta, msg,
+    h("div", { class: "btns", style: "grid-template-columns:1fr 1fr" }, go, h("button", { class: "mini", onclick: () => { qs.importOpen = false; drawQ(); } }, "Хаах")));
+}
+
+function qCard(x) {
+  const edit = h("button", { class: "mini", onclick: () => { qs.editing = x; drawQ(); window.scrollTo(0, 0); } }, "✎ Засах");
+  const del = h("button", { class: "mini del" }, "Устгах");
+  del.onclick = async () => {
+    if (!confirm("Энэ асуултыг устгах уу?\n\n" + x.q)) return;
+    del.disabled = true;
+    const r = await api("/api/admin/questions/" + x.id, { method: "DELETE" });
+    if (!r.ok) { alert(r.data.error || "Алдаа"); del.disabled = false; return; }
+    qs.msg = "✓ Устгагдлаа"; loadQ();
+  };
+  return h("div", { class: "card" },
+    h("div", { class: "row" },
+      h("div", {}, h("span", { class: "tag pending" }, topicName(x.topic)), " ", h("span", { class: "tag pending" }, DIFF[x.diff] || ""),
+        x.custom ? h("span", { class: "tag claimed" }, " 👤 " + (x.ownerEmail || "хэрэглэгч")) : null),
+      h("div", { class: "mail" }, x.id)),
+    h("div", { class: "who", style: "margin-top:10px;font-size:16px" }, x.q),
+    x.a.map((o, i) => h("div", { class: "opt" + (i === x.c ? " ok" : "") }, (i === x.c ? "✓ " : "") + "АБВГДЕ"[i] + ". " + o)),
+    x.e ? h("div", { class: "meta" }, "💡 " + x.e) : null,
+    h("div", { class: "btns", style: "grid-template-columns:1fr 1fr" }, edit, del));
+}
+
+const put = (...nodes) => app.replaceChildren(...nodes.flat().filter(Boolean));
+function drawQ() {
+  const d = qs.data, st = d.stats;
+  const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
+  const search = h("input", { type: "search", placeholder: "Асуултаас хайх…", style: "margin-top:0" });
+  search.value = qs.search;
+  const doSearch = () => { qs.search = search.value.trim(); qs.page = 1; loadQ(); };
+  search.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
+  const owner = h("select", {}, [["official", "Албан ёсны"], ["user", "Хэрэглэгчийн нэмсэн"], ["all", "Бүгд"]].map(([v, l]) => h("option", { value: v }, l)));
+  owner.value = qs.owner; owner.onchange = () => { qs.owner = owner.value; qs.page = 1; loadQ(); };
+  const topic = h("select", {}, h("option", { value: "" }, "Бүх сэдэв"), st.topics.map((t) => h("option", { value: t.id }, t.name)));
+  topic.value = qs.topic; topic.onchange = () => { qs.topic = topic.value; qs.page = 1; loadQ(); };
+  const chip = (t) => h("button", { class: "chip" + (qs.topic === t.id ? " on" : ""), onclick: () => { qs.topic = qs.topic === t.id ? "" : t.id; qs.page = 1; loadQ(); } },
+    t.name + " ", h("b", {}, String(t.official)), t.user ? h("span", {}, " +" + t.user) : null);
+  const msg = qs.msg; qs.msg = "";
+  put(
+    h("div", { class: "top" }, h("h1", {}, "АХА Админ"), h("button", { class: "link", onclick: async () => { await post("/api/auth/logout"); start(); } }, "Гарах")),
+    navBar(),
+    h("div", { class: "stats" },
+      h("div", { class: "stat" }, h("b", {}, String(st.totalOfficial)), h("span", {}, "Албан ёсны асуулт")),
+      h("div", { class: "stat" }, h("b", {}, String(st.totalUser)), h("span", {}, "Хэрэглэгчийн нэмсэн")),
+      h("div", { class: "stat" }, h("b", {}, String(st.totalOfficial + st.totalUser)), h("span", {}, "Нийт"))),
+    h("div", { class: "chips" }, st.topics.map(chip)),
+    msg ? h("div", { class: "sub", style: "color:#86EFAC" }, msg) : null,
+    qs.editing ? editor(qs.editing === "new" ? null : qs.editing) : null,
+    qs.importOpen ? importPanel() : null,
+    h("div", { class: "ctl" }, owner, topic, h("div", { class: "full" }, search)),
+    h("div", { class: "btns", style: "grid-template-columns:1fr 1fr 1fr;margin:0 0 14px" },
+      h("button", { class: "mini main", onclick: () => { qs.editing = "new"; qs.importOpen = false; drawQ(); window.scrollTo(0, 0); } }, "+ Асуулт"),
+      h("button", { class: "mini", onclick: () => { qs.importOpen = !qs.importOpen; qs.editing = null; drawQ(); } }, "⇪ Олноор"),
+      h("button", { class: "mini", onclick: doSearch }, "🔍 Хайх")),
+    h("div", { class: "sub" }, d.total + " асуулт олдлоо · хуудас " + d.page + "/" + pages),
+    d.rows.length ? d.rows.map(qCard) : h("div", { class: "empty" }, "Асуулт олдсонгүй"),
+    h("div", { class: "pager" },
+      h("button", { class: "mini", disabled: d.page <= 1 ? "disabled" : null, onclick: () => { qs.page = d.page - 1; loadQ(); window.scrollTo(0, 0); } }, "← Өмнөх"),
+      h("span", {}, d.page + " / " + pages),
+      h("button", { class: "mini", disabled: d.page >= pages ? "disabled" : null, onclick: () => { qs.page = d.page + 1; loadQ(); window.scrollTo(0, 0); } }, "Дараах →")));
+}
+
 start();
 </script>
 </body>

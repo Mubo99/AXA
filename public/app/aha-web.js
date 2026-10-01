@@ -215,6 +215,39 @@
     },
   };
 
+  // ---------- Асуултууд: албан ёсны (сервер) + зөвхөн өөрийн нэмсэн ----------
+  let topicQueue = Promise.resolve();
+  window.AHA_Q = {
+    load: async () => {
+      try {
+        let j = await api("/api/questions");
+        // Хуучин (зөвхөн хөтөч дотор хадгалагдсан) асуултыг нэг удаа энэ бүртгэлд шилжүүлнэ
+        try {
+          const raw = localStorage.getItem("aha_questions_v1");
+          if (raw) {
+            const old = JSON.parse(raw);
+            if (Array.isArray(old) && old.length) {
+              const r = await post("/api/questions", { items: old.map((x) => ({ topic: x.topic, q: x.q, a: x.a, c: x.c })) });
+              localStorage.removeItem("aha_questions_v1");
+              if (r.created) j = await api("/api/questions");
+            } else localStorage.removeItem("aha_questions_v1");
+          }
+        } catch (e) { /* PLUS биш бол шилжүүлэхгүй, дараа дахин оролдоно */ }
+        return j;
+      } catch (e) { return null; }
+    },
+    add: async (data) => {
+      await topicQueue;
+      try { const r = await post("/api/questions", data); return { question: r.question }; }
+      catch (e) { return { error: e.message }; }
+    },
+    remove: async (id) => {
+      try { await api("/api/questions/" + encodeURIComponent(id), { method: "DELETE" }); return {}; }
+      catch (e) { return { error: e.message }; }
+    },
+    addTopic: (t) => { topicQueue = topicQueue.then(() => post("/api/topics", t)).catch(() => {}); },
+  };
+
   // Нэвтрээгүй бол аппыг ашиглуулахгүй: эхлээд заавал нэвтрэх/бүртгүүлэх
   (async function gate() {
     let me = null;
